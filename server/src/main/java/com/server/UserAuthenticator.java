@@ -1,18 +1,15 @@
 package com.server;
 
 import java.sql.SQLException;
-import java.util.ArrayList;
 
 public class UserAuthenticator extends com.sun.net.httpserver.BasicAuthenticator {
 
-    //private ArrayList<User> users = null;
     private String errorMessage;
     private int errorCode;
 
     public UserAuthenticator(String realm) {
         super("/coordinates");
-        //this.users = new ArrayList<>();
-        //users.add(new User("dummy", "password", "test@mail"));
+
     }
 
     @Override
@@ -24,15 +21,9 @@ public class UserAuthenticator extends com.sun.net.httpserver.BasicAuthenticator
         } catch (Exception e) {
             errorMessage = e.getMessage();
             errorCode = 500;
-        } 
+        }
 
         return result;
-        /*for (User user : users) {
-            if (user.getUsername().equals(userName) && user.getPassword().equals(password)) {
-                return true;
-            }
-        }
-        return false;*/
     }
 
     public boolean addUser(User user) {
@@ -56,18 +47,6 @@ public class UserAuthenticator extends com.sun.net.httpserver.BasicAuthenticator
         }
 
         return result;
-
-        /*
-         * for (User user: users) {
-         * if (user.getUsername().equals(userName)) {
-         * errorMessage = "User already registered.";
-         * errorCode = 403;
-         * return false;
-         * }
-         * }
-         * 
-         * Boolean result = users.add(new User(userName, password, email));
-         */
     }
 
     public String getErrorMessage() {
