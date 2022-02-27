@@ -1,0 +1,11 @@
+.vscode/launch.json
+server/src/main/java/com/server/keystore.jks
+server/target/classes/com/server/keystore.jks
+server/target/classes/com/server/Server.class
+server/target/classes/com/server/Server$1.class
+server/target/classes/com/server/Server.class
+server/target/classes/com/server/Server.class
+server/target/classes/com/server/UserAuthenticator.class
+server/target/classes/com/server/CoordinatesHandler.class
+server/target/classes/com/server/RegistrationHandler.class
+server/pom.xml
