@@ -4,9 +4,6 @@ import java.sql.SQLException;
 
 public class UserAuthenticator extends com.sun.net.httpserver.BasicAuthenticator {
 
-    private String errorMessage;
-    private int errorCode;
-
     public UserAuthenticator(String realm) {
         super("/coordinates");
 
@@ -19,42 +16,25 @@ public class UserAuthenticator extends com.sun.net.httpserver.BasicAuthenticator
         try {
             result = db.checkIfUsernameMatchesPassword(userName, password);
         } catch (Exception e) {
-            errorMessage = e.getMessage();
-            errorCode = 500;
+            e.printStackTrace();
         }
 
         return result;
     }
 
-    public boolean addUser(User user) {
+    public boolean addUser(User user) throws Exception {
 
         boolean result = false;
         CoordinateDatabase db = CoordinateDatabase.getInstance();
-        try {
             boolean userRegistered = db.checkIfUserExists(user.getUsername());
             if (!userRegistered) {
                 int addedRows = db.addUserToDB(user);
                 if (addedRows == 1) {
                     result = true;
                 }
-            } else {
-                errorMessage = "User already registered.";
-                errorCode = 403;
             }
-        } catch (SQLException e) {
-            errorMessage = e.getMessage();
-            errorCode = 500;
-        }
 
         return result;
-    }
-
-    public String getErrorMessage() {
-        return errorMessage;
-    }
-
-    public int getErrorCode() {
-        return errorCode;
     }
 
 }

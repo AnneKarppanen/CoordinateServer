@@ -1,7 +1,7 @@
 This project is the course assignment for Programming 3 course. 
 It is a server API that receives coordinates from a client. The client is not part of the implementation. 
-This is an ongoing project with final deadline in mid-March. 
-The next steps include hashing the user passwords and expanding and improving the functionalities that the API provides. 
+This is an ongoing project with final deadline on March 20. 
+The next steps include expanding and improving the functionalities that the API provides and creating JUnit tests. 
 The server only accepts requests and sends coordinates in JSON. The users need to register to be able to post and get coordinates. 
 The implementation consists of the following classes. 
 
@@ -19,8 +19,7 @@ UserAuthenticator
 This class is used to add new users and to check the credentials of the existing users.
  
 RegistrationHandler calls UserAuthenticator when it receives a request to register a new user and UserAuthenticator checks with the CoordinateDatabase 
-if the user exists and only adds a new user if the same user does not exist yet in the database. UserAuthenticator lets the RegistrationHandler know if 
-the new user was added or not.
+if the user exists and only adds a new user if the same user does not exist yet in the database. UserAuthenticator lets the RegistrationHandler know if the new user was added or not.
 
 Check credentials method is called when the UserAuthenticator's realm receives incoming requests. 
 UserAuthenticator class calls for CoordinateDatabase and checks that the user that sent the request is registered and entered the correct password.

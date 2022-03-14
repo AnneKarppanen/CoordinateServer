@@ -17,9 +17,7 @@ import java.util.stream.Collectors;
 
 public class RegistrationHandler implements HttpHandler {
 
-    private UserAuthenticator userAuth;
-    private String responseMessage = null;
-    private int responseCode;
+    private final UserAuthenticator userAuth;
 
     public RegistrationHandler(UserAuthenticator userAuth) {
 
@@ -30,10 +28,12 @@ public class RegistrationHandler implements HttpHandler {
     @Override
     public void handle(HttpExchange t) throws IOException {
 
-        if (t.getRequestMethod().equalsIgnoreCase("POST")) {
+        System.out.println("Request handled in thread " + Thread.currentThread().getId());
 
-            handlePostRequest(t);
-            handleResponsePOST(t);
+        if (t.getRequestMethod().equalsIgnoreCase("POST")) {
+            String responseMessage = new String();
+            int responseCode = handlePostRequest(t, responseMessage);
+            handleResponsePOST(t, responseCode, responseMessage);
 
         } else {
 
@@ -42,8 +42,9 @@ public class RegistrationHandler implements HttpHandler {
         }
     }
 
-    private void handlePostRequest(HttpExchange exchange) {
+    private int handlePostRequest(HttpExchange exchange, String responseMessage) {
 
+        int responseCode = 0;
         String requestBody = null;
         Headers headers = exchange.getRequestHeaders();
         String contentType = "";
@@ -60,7 +61,7 @@ public class RegistrationHandler implements HttpHandler {
         if (!isJSON) {
             responseCode = 415;
             responseMessage = "Content-Type not valid. Can only process JSON requests";
-            return;
+            return responseCode;
         }
 
         // Reads message from client to requestBody variable using Buffered Reader
@@ -74,13 +75,13 @@ public class RegistrationHandler implements HttpHandler {
         } catch (Exception e) {
             responseCode = 500;
             responseMessage = "Internal server error.";
-            return;
+            return responseCode;
         }
 
         if (requestBody == null || requestBody.length() == 0) {
             responseCode = 400;
             responseMessage = "Cannot register a new user without user credentials. Please provide username, password and email.";
-            return;
+            return responseCode;
         }
 
         JSONObject newUser = null;
@@ -90,7 +91,7 @@ public class RegistrationHandler implements HttpHandler {
         } catch (JSONException e) {
             responseCode = 400;
             responseMessage = "JSON parse error. User registration failed.";
-            return;
+            return responseCode;
         }
 
         String userName = newUser.getString("username");
@@ -100,33 +101,41 @@ public class RegistrationHandler implements HttpHandler {
         if (userName == null || password == null || email == null) {
             responseCode = 422;
             responseMessage = "Cannot register a user with incomplete credentials.";
-            return;
+            return responseCode;
         }
 
         if (userName.length() < 1 || password.length() < 1) {
             responseCode = 422;
             responseMessage = "Username and password must have at least 1 character.";
-            return;
+            return responseCode;
         }
 
         if (email.length() == 0) {
             responseCode = 422;
             responseMessage = "Cannot register a user without email.";
-            return;
+            return responseCode;
         }
 
-        boolean userAdded = userAuth.addUser(new User(userName, password, email));
-        if (userAdded) {
-            responseCode = 200;
-            responseMessage = "User registered.";
-        } else {
-            responseMessage = userAuth.getErrorMessage();
-            responseCode = userAuth.getErrorCode();
+        try {
+            boolean userAdded = userAuth.addUser(new User(userName, password, email));
+            if (userAdded) {
+                responseCode = 200;
+                responseMessage = "User registered.";
+            } else {
+                responseCode = 409;
+                responseMessage = "Cannot register user";
+            }
+        } catch (Exception e) {
+            responseMessage = e.getMessage();
+            responseCode = 500;
         }
+
+        return responseCode;
 
     }
 
-    private void handleResponsePOST(HttpExchange exchange) throws IOException {
+    private void handleResponsePOST(HttpExchange exchange, int responseCode, String responseMessage)
+            throws IOException {
         try {
             byte[] bytes = responseMessage.getBytes("UTF-8");
             exchange.sendResponseHeaders(responseCode, bytes.length);
@@ -140,10 +149,10 @@ public class RegistrationHandler implements HttpHandler {
 
     }
 
-    private void handleResponse(HttpExchange exchange, String request) throws IOException {
+    private void handleResponse(HttpExchange exchange, String response) throws IOException {
 
         try {
-            byte[] bytes = request.getBytes("UTF-8");
+            byte[] bytes = response.getBytes("UTF-8");
             exchange.sendResponseHeaders(400, bytes.length);
             OutputStream outputStream = exchange.getResponseBody();
             outputStream.write(bytes);

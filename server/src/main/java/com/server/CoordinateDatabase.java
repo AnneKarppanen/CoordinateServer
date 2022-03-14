@@ -10,12 +10,16 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.Base64;
+import java.security.SecureRandom;
+import org.apache.commons.codec.digest.Crypt;
 
 public class CoordinateDatabase {
 
-    private String dbName = "coordinateDB.db";
+    private String dbName = "C:/temp/coordinateDB.db";
     private Connection dbConnection = null;
     private static CoordinateDatabase dbInstance = null;
+    private SecureRandom random;
 
     public static synchronized CoordinateDatabase getInstance() {
         if (null == dbInstance) {
@@ -31,6 +35,7 @@ public class CoordinateDatabase {
         } catch (SQLException e) {
             e.printStackTrace();
         }
+        this.random = new SecureRandom();
     }
 
     /**
@@ -61,8 +66,8 @@ public class CoordinateDatabase {
 
     private boolean initializeDatabase() {
         if (null != dbConnection) {
-            String createUserTable = "CREATE TABLE user (username VARCHAR(50) PRIMARY KEY, password VARCHAR(50) NOT NULL, email VARCHAR(50) NOT NULL)";
-            String createCoordinatetable = "CREATE TABLE coordinate (time INTEGER PRIMARY KEY, latitude VARCHAR(50) NOT NULL, longitude VARCHAR(50) NOT NULL, user VARCHAR(50) REFERENCES user(username))";
+            String createUserTable = "CREATE TABLE user (username VARCHAR(50) PRIMARY KEY, password VARCHAR(150) NOT NULL, salt VARCHAR (100) NOT NULL, email VARCHAR(50) NOT NULL)";
+            String createCoordinatetable = "CREATE TABLE coordinate (time INTEGER PRIMARY KEY, latitude REAL NOT NULL, longitude REAL NOT NULL, user VARCHAR(50) REFERENCES user(username))";
             try {
                 Statement createStatement1 = dbConnection.createStatement();
                 createStatement1.executeUpdate(createUserTable);
@@ -99,8 +104,14 @@ public class CoordinateDatabase {
 
     }
 
-    public int addUserToDB(User user) throws SQLException{
-        String statementString = "INSERT INTO user VALUES('" + user.getUsername() + "', '" + user.getPassword() +  "', '" + user.getEmail() + "')";
+    public int addUserToDB(User user) throws SQLException, IllegalArgumentException {
+        byte bytes[] = new byte[13];
+        random.nextBytes(bytes);
+        String saltBytes = new String(Base64.getEncoder().encode(bytes));
+        String salt = "$6$" + saltBytes;
+        String hashedPassword = Crypt.crypt(user.getPassword(), salt);
+        String statementString = "INSERT INTO user VALUES('" + user.getUsername() + "', '" + hashedPassword + "', '"
+                + salt + "', '" + user.getEmail() + "')";
         Statement insertStatement = dbConnection.createStatement();
         int result = insertStatement.executeUpdate(statementString);
         insertStatement.close();
@@ -115,8 +126,9 @@ public class CoordinateDatabase {
         if (!rs.next()) {
             result = false;
         } else {
-            String passwordInB = rs.getString("password");
-            if (password.equals(passwordInB)) {
+            String passwordInDB = rs.getString("password");
+            String cryptedPassword = Crypt.crypt(password, passwordInDB);
+            if (passwordInDB.equals(cryptedPassword)) {
                 result = true;
             }
         }
@@ -125,8 +137,10 @@ public class CoordinateDatabase {
         return result;
     }
 
-    public int addCoordinateToDB(UserCoordinate coordinate) throws SQLException{
-        String statementString = "INSERT INTO coordinate VALUES('" + coordinate.timestampAsLong() + "', '" + coordinate.getLatitude() +  "', '" + coordinate.getLongitude() + "', '" + coordinate.getNick() + "')";
+    public int addCoordinateToDB(UserCoordinate coordinate) throws SQLException {
+        String statementString = "INSERT INTO coordinate VALUES('" + coordinate.timestampAsLong() + "', '"
+                + coordinate.getLatitude() + "', '" + coordinate.getLongitude() + "', '" + coordinate.getNick() + "')";
+        // System.out.println(statementString);
         Statement insertStatement = dbConnection.createStatement();
         int result = insertStatement.executeUpdate(statementString);
         insertStatement.close();
@@ -138,18 +152,28 @@ public class CoordinateDatabase {
         String queryString = "SELECT * FROM coordinate";
         Statement queryStatement = dbConnection.createStatement();
         ResultSet rs = queryStatement.executeQuery(queryString);
-        while (rs.next()) { 
-            long sent = rs.getInt("time");
+        while (rs.next()) {
+            long sent = rs.getLong("time");
+            // System.out.println("time33:" + sent);
             ZonedDateTime timestamp = ZonedDateTime.ofInstant(Instant.ofEpochMilli(sent), ZoneOffset.UTC);
-            String latitude = rs.getString("latitude");
-            String longitude = rs.getString("longitude");
+            // System.out.println(timestamp.toString());
+            Double latitude = rs.getDouble("latitude");
+            Double longitude = rs.getDouble("longitude");
             String nick = rs.getString("user");
             queryResult.add(new UserCoordinate(nick, latitude, longitude, timestamp));
-    
+
         }
         queryStatement.close();
 
         return queryResult;
+    }
+
+    public void close() {
+        try {
+            dbConnection.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
 }

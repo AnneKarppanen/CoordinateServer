@@ -8,6 +8,8 @@ import com.sun.net.httpserver.HttpsConfigurator;
 import java.io.FileInputStream;
 import java.net.InetSocketAddress;
 import java.security.KeyStore;
+import java.util.concurrent.Executors;
+import java.util.Scanner;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
@@ -39,8 +41,20 @@ public class Server {
             HttpContext context = server.createContext("/coordinates", new CoordinatesHandler());
             context.setAuthenticator(authenticator);
             // creates a default executor
-            server.setExecutor(null);
+            server.setExecutor(Executors.newCachedThreadPool());
             server.start();
+
+            boolean running = true;
+            Scanner scanner = new Scanner(System.in);
+
+            while (running) {
+                String userInput = scanner.nextLine();
+                if (userInput.equals("/quit")) {
+                    running = false;
+                    server.stop(3);
+                    coordinateDB.close();
+                }
+            }
 
         } catch (Exception e) {
             e.printStackTrace();

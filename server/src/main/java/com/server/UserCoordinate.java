@@ -7,12 +7,12 @@ import java.time.format.DateTimeFormatter;
 
 public class UserCoordinate {
 
-    public String nick;
-    public String latitude;
-    public String longitude;
-    public ZonedDateTime timestamp;
+    private String nick;
+    private Double latitude;
+    private Double longitude;
+    private ZonedDateTime timestamp;
     
-    public UserCoordinate(String nick, String latitude, String longitude, ZonedDateTime timestamp) {
+    public UserCoordinate(String nick, Double latitude, Double longitude, ZonedDateTime timestamp) {
         this.nick = nick;
         this.latitude = latitude;
         this.longitude = longitude;
@@ -48,19 +48,19 @@ public class UserCoordinate {
         this.nick = nick;
     }
 
-    public String getLatitude() {
+    public Double getLatitude() {
         return latitude;
     }
 
-    public void setLatitude(String latitude) {
+    public void setLatitude(Double latitude) {
         this.latitude = latitude;
     }
 
-    public String getLongitude() {
+    public Double getLongitude() {
         return longitude;
     }
 
-    public void setLongitude(String longitude) {
+    public void setLongitude(Double longitude) {
         this.longitude = longitude;
     }
 

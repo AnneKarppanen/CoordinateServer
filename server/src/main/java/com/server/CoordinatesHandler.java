@@ -22,12 +22,6 @@ import java.util.stream.Collectors;
 
 public class CoordinatesHandler implements HttpHandler {
 
-    int responseCode;
-
-    public CoordinatesHandler() {
-
-    }
-
     @Override
     public void handle(HttpExchange t) throws IOException {
 
@@ -35,13 +29,13 @@ public class CoordinatesHandler implements HttpHandler {
 
             if (t.getRequestMethod().equalsIgnoreCase("POST")) {
 
-                handlePostRequest(t);
-                handleResponsePOST(t);
+                int responseCode = handlePostRequest(t);
+                handleResponsePOST(t, responseCode);
 
             } else if (t.getRequestMethod().equalsIgnoreCase("GET")) {
-
-                String response = handleGetRequest(t);
-                handleResponseGET(t, response);
+                StringBuilder response = new StringBuilder();
+                int responseCode = handleGetRequest(t, response);
+                handleResponseGET(t, response.toString(), responseCode);
 
             } else {
 
@@ -55,9 +49,8 @@ public class CoordinatesHandler implements HttpHandler {
 
     }
 
-    private String handleGetRequest(HttpExchange exchange) {
-
-        String response = "";
+    private int handleGetRequest(HttpExchange exchange, StringBuilder response) {
+        int responseCode = 0;
         CoordinateDatabase db = CoordinateDatabase.getInstance();
         ArrayList<UserCoordinate> queryResult = new ArrayList<>();
 
@@ -77,18 +70,20 @@ public class CoordinatesHandler implements HttpHandler {
                     responseCoordinates.put(obj);
                 }
 
-                response = responseCoordinates.toString();
+                response.append(responseCoordinates.toString());
+                responseCode = 200;
             }
         } catch (Exception e) {
             responseCode = 500;
         }
 
-        return response;
+        return responseCode;
 
     }
 
-    private void handlePostRequest(HttpExchange exchange) {
+    private int handlePostRequest(HttpExchange exchange) {
 
+        int responseCode = 0;
         String requestBody = null;
         Headers headers = exchange.getRequestHeaders();
         String contentType = "";
@@ -105,7 +100,7 @@ public class CoordinatesHandler implements HttpHandler {
 
         if (!isJSON) {
             responseCode = 415;
-            return;
+            return responseCode;
         }
 
         // Reads message from client to requestBody variable using Buffered Reader
@@ -116,31 +111,34 @@ public class CoordinatesHandler implements HttpHandler {
         } catch (Exception e) {
             System.out.println(e.getMessage());
             responseCode = 500;
-            return;
+            return responseCode;
         }
 
         if (requestBody == null || requestBody.length() == 0) {
             responseCode = 400;
-            return;
+            return responseCode;
         }
 
         JSONObject newCoordinates = null;
+        String userName = null;
+        Double longitude = null;
+        Double latitude = null;
+        String timestamp = null;
 
         try {
             newCoordinates = new JSONObject(requestBody);
+            userName = newCoordinates.getString("username");
+            longitude = newCoordinates.getDouble("longitude");
+            latitude = newCoordinates.getDouble("latitude");
+            timestamp = newCoordinates.getString("sent");
         } catch (JSONException e) {
             responseCode = 400;
-            return;
+            return responseCode;
         }
 
-        String userName = newCoordinates.getString("username");
-        String longitude = newCoordinates.getString("longitude");
-        String latitude = newCoordinates.getString("latitude");
-        String timestamp = newCoordinates.getString("sent");
-
-        if (userName == null || longitude == null || latitude == null || timestamp == null) {
+        if (userName == null || longitude.isNaN() || latitude.isNaN() || timestamp == null) {
             responseCode = 422;
-            return;
+            return responseCode;
         }
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSX");
@@ -151,7 +149,7 @@ public class CoordinatesHandler implements HttpHandler {
         } catch (Exception e) {
             responseCode = 422;
             e.printStackTrace();
-            return;
+            return responseCode;
         }
 
         try {
@@ -167,9 +165,11 @@ public class CoordinatesHandler implements HttpHandler {
             e.printStackTrace();
         }
 
+        return responseCode;
+
     }
 
-    private void handleResponseGET(HttpExchange exchange, String response) throws IOException {
+    private void handleResponseGET(HttpExchange exchange, String response, int responseCode) throws IOException {
 
         try {
 
@@ -191,7 +191,7 @@ public class CoordinatesHandler implements HttpHandler {
         }
     }
 
-    private void handleResponsePOST(HttpExchange exchange) throws IOException {
+    private void handleResponsePOST(HttpExchange exchange, int responseCode) throws IOException {
         try {
             exchange.sendResponseHeaders(responseCode, -1);
             OutputStream outputStream = exchange.getResponseBody();
