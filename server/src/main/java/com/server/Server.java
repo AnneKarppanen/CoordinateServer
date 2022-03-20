@@ -39,7 +39,9 @@ public class Server {
 
             // create context that defines path for the resource, in this case "coordinates"
             HttpContext context = server.createContext("/coordinates", new CoordinatesHandler());
+            HttpContext commentContext = server.createContext("/comment", new CommentHandler());
             context.setAuthenticator(authenticator);
+            commentContext.setAuthenticator(authenticator);
             // creates a default executor
             server.setExecutor(Executors.newCachedThreadPool());
             server.start();

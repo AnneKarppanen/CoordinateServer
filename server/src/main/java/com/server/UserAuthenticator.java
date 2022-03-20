@@ -26,13 +26,13 @@ public class UserAuthenticator extends com.sun.net.httpserver.BasicAuthenticator
 
         boolean result = false;
         CoordinateDatabase db = CoordinateDatabase.getInstance();
-            boolean userRegistered = db.checkIfUserExists(user.getUsername());
-            if (!userRegistered) {
-                int addedRows = db.addUserToDB(user);
-                if (addedRows == 1) {
-                    result = true;
-                }
+        boolean userRegistered = db.checkIfUserExists(user.getUsername());
+        if (!userRegistered) {
+            int addedRows = db.addUserToDB(user);
+            if (addedRows == 1) {
+                result = true;
             }
+        }
 
         return result;
     }

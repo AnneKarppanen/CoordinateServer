@@ -64,11 +64,6 @@ public class RegistrationHandler implements HttpHandler {
             return responseCode;
         }
 
-        // Reads message from client to requestBody variable using Buffered Reader
-        // within try-with-resources block. Checks if user can be registered. If user
-        // cannot be registered
-        // saves an errorMessage.
-
         try (BufferedReader reader = new BufferedReader(
                 new InputStreamReader(exchange.getRequestBody(), StandardCharsets.UTF_8))) {
             requestBody = reader.lines().collect(Collectors.joining("\n"));

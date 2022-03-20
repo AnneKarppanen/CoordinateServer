@@ -1,11 +1,11 @@
 package com.server;
 
 public class User {
-    
+
     private String username;
     private String password;
     private String email;
-    
+
     public User(String username, String password, String email) {
         this.username = username;
         this.password = password;
@@ -66,16 +66,4 @@ public class User {
         return "User [email=" + email + ", password=" + password + ", username=" + username + "]";
     }
 
-    
-
-   
-
-
-    
-
-    
-
-    
-
-    
 }
